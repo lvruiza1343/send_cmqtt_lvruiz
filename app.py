@@ -4,74 +4,61 @@ import streamlit as st
 import json
 import platform
 
-# Muestra la versión de Python junto con detalles adicionales
-st.write("Versión de Python:", platform.python_version())
+# -------- CONFIGURACIONES --------
+broker = "157.230.214.127"
+port = 1883
+client_id = "lvruiza"
+topic_digital = "saludo"
+topic_analog = "saludo30"
 
-values = 0.0
-act1="OFF"
+# -------- STREAMLIT SETUP --------
+st.set_page_config(page_title="Control MQTT", layout="centered")
+st.title("🔧 Control MQTT desde Streamlit")
+st.caption(f"🧠 Python version: {platform.python_version()}")
 
-def on_publish(client,userdata,result):             #create function for callback
-    print("el dato ha sido publicado \n")
+# -------- MQTT CLIENT --------
+client = paho.Client(client_id)
+
+def on_publish(client, userdata, result):
+    print("📤 Mensaje publicado")
     pass
 
 def on_message(client, userdata, message):
-    global message_received
-    time.sleep(2)
-    message_received=str(message.payload.decode("utf-8"))
-    st.write(message_received)
+    msg = str(message.payload.decode("utf-8"))
+    st.toast(f"📩 Mensaje recibido: {msg}")
+    print("📩 Mensaje recibido:", msg)
 
-        
+client.on_publish = on_publish
+client.on_message = on_message
 
+try:
+    client.connect(broker, port)
+    st.success("✅ Conectado al broker MQTT")
+except:
+    st.error("❌ No se pudo conectar al broker")
 
-broker="157.230.214.127"
-port=1883
-client1= paho.Client("lvruiza")
-client1.on_message = on_message
+# -------- INTERFAZ DE BOTONES --------
+col1, col2 = st.columns(2)
 
+with col1:
+    if st.button('🔛 Encender (ON)', use_container_width=True):
+        message = json.dumps({"Act1": "ON"})
+        client.publish(topic_digital, message)
+        st.success("Dispositivo encendido ✅")
 
+with col2:
+    if st.button('🔌 Apagar (OFF)', use_container_width=True):
+        message = json.dumps({"Act1": "OFF"})
+        client.publish(topic_digital, message)
+        st.warning("Dispositivo apagado ⚠️")
 
-st.title("MQTT Control")
+# -------- SLIDER Y ENVÍO DE VALOR ANALÓGICO --------
+st.divider()
+values = st.slider('🎚 Selecciona el valor analógico', 0.0, 100.0, 50.0)
+st.write(f'🔢 Valor seleccionado: {values}')
 
-if st.button('ON'):
-    act1="ON"
-    client1= paho.Client("lvruiza")                           
-    client1.on_publish = on_publish                          
-    client1.connect(broker,port)  
-    message =json.dumps({"Act1":act1})
-    ret= client1.publish("saludo", message)
- 
-    #client1.subscribe("Sensores")
-    
-    
-else:
-    st.write('')
-
-if st.button('OFF'):
-    act1="OFF"
-    client1= paho.Client("lvruiza")                           
-    client1.on_publish = on_publish                          
-    client1.connect(broker,port)  
-    message =json.dumps({"Act1":act1})
-    ret= client1.publish("saludo", message)
-  
-    
-else:
-    st.write('')
-
-values = st.slider('Selecciona el rango de valores',0.0, 100.0)
-st.write('Values:', values)
-
-if st.button('Enviar valor analógico'):
-    client1= paho.Client("lvruiza")                           
-    client1.on_publish = on_publish                          
-    client1.connect(broker,port)   
-    message =json.dumps({"Analog": float(values)})
-    ret= client1.publish("saludo30", message)
-    
- 
-else:
-    st.write('')
-
-
-
+if st.button('📤 Enviar valor analógico', use_container_width=True):
+    message = json.dumps({"Analog": float(values)})
+    client.publish(topic_analog, message)
+    st.success(f"Valor {values} enviado al topic '{topic_analog}' 🚀")
 
