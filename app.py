@@ -16,7 +16,7 @@ st.set_page_config(page_title="Control MQTT", layout="centered")
 st.title("🔧 Control MQTT desde Streamlit")
 
 # Imagen 
-st.image("codigo.jpg", caption="Dashboard IoT", use_column_width=True)
+st.image("codigo.jpg", caption="Dashboard IoT", use_container_width=True)
 
 # -------- VERSIÓN DE PYTHON --------
 st.caption(f"🧠 Python version: {platform.python_version()}")
